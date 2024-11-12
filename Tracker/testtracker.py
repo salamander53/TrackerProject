@@ -3,8 +3,8 @@ import hashlib
 import bencodepy
 
 # Địa chỉ của tracker
-TRACKER_URL = 'http://localhost:8080/announce'
-
+TRACKER_URL = 'http://48.210.50.194:8080/announce'
+#TRACKER_URL = 'http://localhost:8080/announce'
 # Tạo dữ liệu giả cho yêu cầu
 def generate_fake_data():
     info_hash = hashlib.sha1(b"fake_torrent_data").hexdigest()

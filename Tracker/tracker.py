@@ -1,6 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse
-import bencode
+import bencodepy
 import time
 import hashlib
 
@@ -63,13 +63,13 @@ class TrackerHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'application/x-bittorrent')
             self.end_headers()
-            self.wfile.write(bencode.bencode(response))
+            self.wfile.write(bencodepy.encode(response))
         else:
             # Gửi lỗi nếu thiếu tham số
             self.send_response(400)
             self.send_header('Content-Type', 'application/x-bittorrent')
             self.end_headers()
-            self.wfile.write(bencode.bencode({b'failure reason': b'Missing required parameters'}))
+            self.wfile.write(bencodepy.encode({b'failure reason': b'Missing required parameters'}))
 
     def CheckClientInfo(self, info_hash, peer_id, ip, port):
         if info_hash not in torrents:
