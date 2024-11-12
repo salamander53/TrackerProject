@@ -1,6 +1,6 @@
 import requests
 import hashlib
-import bencode
+import bencodepy
 
 # Địa chỉ của tracker
 TRACKER_URL = 'http://localhost:8080/announce'
@@ -36,7 +36,7 @@ def send_announce_request(data):
     if response.status_code == 200:
         try:
             # Giải mã phản hồi từ tracker
-            tracker_response = bencode.bdecode(response.content)
+            tracker_response = bencodepy.decode(response.content)
             print("Response from Tracker:", tracker_response)
             
             # Trích xuất danh sách peers từ phản hồi tracker
