@@ -51,8 +51,8 @@ def send_announce_request(data):
                     port = (peers[i + 4] << 8) + peers[i + 5]
                     
                     # Tùy chọn: bỏ qua IP của chính bạn nếu cần
-                    if ip != 'your_public_ip' or port != 6881:  
-                        peer_list.append({'ip': ip, 'port': port})
+                    # if ip != 'your_public_ip' or port != 6881:  
+                    peer_list.append({'ip': ip, 'port': port})
             
             # In ra danh sách peers đã phân tích
             print("Peer List:", peer_list)
