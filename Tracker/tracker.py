@@ -52,6 +52,7 @@ class TrackerHandler(BaseHTTPRequestHandler):
                     b'interval': 1800,
                     b'peers': compact_peer_list,
                 }
+                print(torrents)
             else:
                 self.CheckTorrentInfo(info_hash)
                 self.CheckClientInfo(info_hash, peer_id, ip, port)
