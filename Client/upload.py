@@ -1,5 +1,6 @@
 import requests
 import bencodepy
+import bencode
 import hashlib
 import os
 import socket
@@ -59,7 +60,7 @@ def generate_torrent(file_path, announce_list, torrent_name):
     }
 
     # Tạo file torrent
-    output_path = os.path.join("/tmp", f"{torrent_name}.torrent")
+    output_path = os.path.join("C:\\Users\\HP\\Downloads", f"{torrent_name}.torrent")
     with open(output_path, "wb") as torrent_file:
         torrent_file.write(bencodepy.encode(torrent_data))
 
@@ -88,8 +89,8 @@ def bencode_pieces(file_path, piece_length):
 # Ví dụ sử dụng
 if __name__ == "__main__":
     # Thay đổi đường dẫn và tên file theo nhu cầu
-    file_path = "path/to/your/file"
-    announce_list = ["http://example.com/announce"]
+    file_path = "C:/Users/HP/Downloads/Report.pdf"
+    announce_list = ["http://48.210.50.194:8080/announce"]
     torrent_name = "MyTorrent"
 
     torrent_file_path = generate_torrent(file_path, announce_list, torrent_name)
@@ -184,16 +185,17 @@ def start_seeder(torrent_file, port=8180):
         conn.close()
         print(f"Connection closed: {addr}")
 def main():
-    parser = argparse.ArgumentParser(description="Torrent Seeder")
-    parser.add_argument("command", help="Command to execute (e.g., 'seed')")
-    parser.add_argument("torrent_file", help="Path to the torrent file")
+    print("on main: ")
+    # parser = argparse.ArgumentParser(description="Torrent Seeder")
+    # parser.add_argument("command", help="Command to execute (e.g., 'seed')")
+    # parser.add_argument("torrent_file", help="Path to the torrent file")
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    if args.command == "seed":
-        start_seeder(args.torrent_file)
-    else:
-        print("Invalid command. Use 'seed' to start seeding.")
+    # if args.command == "seed":
+    #     start_seeder(args.torrent_file)
+    # else:
+    #     print("Invalid command. Use 'seed' to start seeding.")
 
 if __name__ == "__main__":
     main()
