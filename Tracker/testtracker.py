@@ -14,7 +14,7 @@ def generate_fake_data():
     downloaded = 0
     left = 1000000  
     event = 'started' 
-    peerType = 'leecher'
+    type = 'leecher'
     return {
         'info_hash': info_hash,
         'peer_id': peer_id,
@@ -23,7 +23,7 @@ def generate_fake_data():
         'downloaded': downloaded,
         'left': left,
         'event': event,
-        'peerType': peerType
+        'type': type
     }
 
 # Hàm gửi yêu cầu ANNOUNCE đến tracker

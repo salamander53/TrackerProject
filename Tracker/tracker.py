@@ -75,7 +75,7 @@ class TrackerHandler(BaseHTTPRequestHandler):
         if info_hash not in torrents:
             torrents[info_hash] = []
         
-        existing_peer = next((peer for peer in torrents[info_hash] if peer['peer_id'] == peer_id), None)
+        existing_peer = next((peer for peer in torrents[info_hash] if peer['peer_id'] == peer_id ), None)
         if existing_peer:
             existing_peer.update({'ip': ip, 'port': int(port), 'last_seen': time.time()})
         else:
