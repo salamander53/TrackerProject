@@ -48,7 +48,7 @@ def calculate_info_hash(info):
     bencoded_info = bencodepy.encode(info)
     return hashlib.sha1(bencoded_info).digest()
 
-def announce_to_tracker(torrent_data, port, peer_id):
+def announce_to_tracker(torrent_data, port, peer_id, type):
     info_hash = calculate_info_hash(torrent_data['info'])
     tracker_url = torrent_data['announce']
 
@@ -61,7 +61,7 @@ def announce_to_tracker(torrent_data, port, peer_id):
         'left': torrent_data['info']['length'],
         'compact': 1,
         'event': 'started',
-        'peerType': 'seeder',
+        'type': type,
     }
 
     try:
@@ -167,8 +167,8 @@ def start_seeder(torrent_file, port=8180):
     peer_id = generate_peer_id()
 
     # Announce to tracker on startup
-    announce_to_tracker(torrent_data, port, peer_id)
-
+    announce_to_tracker(torrent_data, port, peer_id, 'seeder')
+    
     # Load the file into memory for simplicity
     file_path = "C:/Users/HP/Downloads/Report.pdf"
     #file_path = os.path.join(os.getcwd(), torrent_data['info']['name'].decode())
