@@ -66,11 +66,11 @@ def announce_to_tracker(torrent_data, port, peer_id, type):
         'event': 'started',
         'type': type,
     }
-    peer_list = []
+    
     try:
         response = requests.get(tracker_url, params=params)
         response.raise_for_status()  # Kiểm tra phản hồi có thành công không
-
+        peer_list = []
         # Giải mã phản hồi bencoded từ tracker
         tracker_response = bencodepy.decode(response.content)
         peers = tracker_response.get(b'peers', b'')
@@ -81,10 +81,7 @@ def announce_to_tracker(torrent_data, port, peer_id, type):
             # Phân tích danh sách peers dạng compact (6 byte cho mỗi peer)
             for i in range(0, len(peers), 6):
                 ip = f"{peers[i]}.{peers[i + 1]}.{peers[i + 2]}.{peers[i + 3]}"
-                port = (peers[i + 4] << 8) + peers[i + 5]
-                
-                # Tùy chọn: bỏ qua IP của chính bạn nếu cần
-                # if ip != 'your_public_ip' or port != 6881:  
+                port = (peers[i + 4] << 8) + peers[i + 5] 
                 peer_list.append({'ip': ip, 'port': port})
             
         # In ra danh sách peers đã phân tích
@@ -154,11 +151,11 @@ def create_handshake(info_hash, peer_id):
 
 
 
-def start_leecher(torrent_file, port=8180):
+def start_leecher(torrent_file, port=9999):
     file_content = read_file(torrent_file)
     torrent_data, _ = decode_bencode(file_content)
-    #peer_id = generate_peer_id()
-    peer_id = b'\x9c\xc3\xad\x9a\xe2\x15\x8f\xa5\xc4\xe9\x08\x7f\x5c\x84\xb6\x22\x92\x5b\x7a\x90'
+    peer_id = generate_peer_id()
+    #peer_id = b'\x9c\xc3\xad\x9a\xe2\x15\x8f\xa5\xc4\xe9\x08\x7f\x5c\x84\xb6\x22\x92\x5b\x7a\x90'
 
     # Announce to tracker on startup
     peer_list = announce_to_tracker(torrent_data, port, peer_id, 'leecher')
