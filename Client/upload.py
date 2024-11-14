@@ -6,6 +6,43 @@ import os
 import socket
 import argparse
 
+def decode_bencode(bencoded_value):
+    if chr(bencoded_value[0]).isdigit():
+        first_colon_index = bencoded_value.find(b":")
+        if first_colon_index == -1:
+            raise ValueError("Invalid encoded value")
+        length = int(bencoded_value[:first_colon_index])
+        return (
+            bencoded_value[first_colon_index + 1 : first_colon_index + 1 + length],
+            bencoded_value[first_colon_index + 1 + length :],
+        )
+    elif chr(bencoded_value[0]) == "i":
+        end_index = bencoded_value.find(b"e")
+        if end_index == -1:
+            raise ValueError("Invalid encoded value")
+        return int(bencoded_value[1:end_index]), bencoded_value[end_index + 1 :]
+    elif chr(bencoded_value[0]) == "l":
+        list_values = []
+        remaining = bencoded_value[1:]
+        while remaining[0] != ord("e"):
+            decoded, remaining = decode_bencode(remaining)
+            list_values.append(decoded)
+        return list_values, remaining[1:]
+    elif chr(bencoded_value[0]) == "d":
+        dict_values = {}
+        remaining = bencoded_value[1:]
+        while remaining[0] != ord("e"):
+            key, remaining = decode_bencode(remaining)
+            if isinstance(key, bytes):
+                key = key.decode()
+            value, remaining = decode_bencode(remaining)
+            dict_values[key] = value
+        return dict_values, remaining[1:]
+    else:
+        raise NotImplementedError(
+            "Only strings, integers, lists, and dictionaries are supported at the moment"
+        )
+
 def calculate_info_hash(info):
     # Bencode hóa từ điển info và tính toán mã băm
     bencoded_info = bencodepy.encode(info)
@@ -24,7 +61,7 @@ def announce_to_tracker(torrent_data, port, peer_id):
         'left': torrent_data['info']['length'],
         'compact': 1,
         'event': 'started',
-        'ip': '192.168.1.3',  # Thay thế bằng IP công cộng nếu cần
+        'peerType': 'seeder',
     }
 
     try:
@@ -48,14 +85,14 @@ def announce_to_tracker(torrent_data, port, peer_id):
 
 
 def generate_torrent(file_path, announce_list, torrent_name):
-    files = [os.path.abspath(file_path)]
+    #files = [os.path.abspath(file_path)]
     torrent_data = {
         "announce": announce_list[0],  # Chọn tracker đầu tiên
         "info": {
             "name": torrent_name,
             "length": os.path.getsize(file_path),
             "piece length": 16384,  # Kích thước mỗi phần (byte)
-            "pieces": bencode_pieces(file_path, 16384)  # Tính toán các mã băm của từng phần
+            "pieces": bytes(bencode_pieces(file_path, 16384))  # Tính toán các mã băm của từng phần
         }
     }
 
@@ -121,10 +158,11 @@ def send_piece_message(conn, piece_index, begin, piece_data):
     conn.send(message)
 def start_seeder(torrent_file, port=8180):
     file_content = read_file(torrent_file)
-    torrent_data = bencodepy.decode(file_content)
-    info_hash = calculate_info_hash(torrent_data[b'info'])
-    piece_length = torrent_data[b'info'][b'piece length']
-    file_length = torrent_data[b'info'][b'length']
+    torrent_data, _ = decode_bencode(file_content)
+    #torrent_data = bencodepy.decode(file_content)
+    info_hash = calculate_info_hash(torrent_data['info'])
+    piece_length = torrent_data['info']['piece length']
+    file_length = torrent_data['info']['length']
     total_pieces = (file_length + piece_length - 1) // piece_length
     peer_id = generate_peer_id()
 
@@ -132,15 +170,16 @@ def start_seeder(torrent_file, port=8180):
     announce_to_tracker(torrent_data, port, peer_id)
 
     # Load the file into memory for simplicity
-    file_path = os.path.join(os.getcwd(), torrent_data[b'info'][b'name'].decode())
+    file_path = "C:/Users/HP/Downloads/Report.pdf"
+    #file_path = os.path.join(os.getcwd(), torrent_data['info']['name'].decode())
     file_buffer = read_file(file_path)
-    print(f"Starting seeder for file: {torrent_data[b'info'][b'name'].decode()}")
+    print(f"Starting seeder for file: {torrent_data['info']['name'].decode()}")
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('0.0.0.0', port))
     server_socket.listen(5)
     print(f"Seeder listening on port {port}")
-
+    """
     while True:
         conn, addr = server_socket.accept()
         print(f"Connection received from {addr}")
@@ -184,18 +223,18 @@ def start_seeder(torrent_file, port=8180):
 
         conn.close()
         print(f"Connection closed: {addr}")
+    """
 def main():
-    print("on main: ")
-    # parser = argparse.ArgumentParser(description="Torrent Seeder")
-    # parser.add_argument("command", help="Command to execute (e.g., 'seed')")
-    # parser.add_argument("torrent_file", help="Path to the torrent file")
+    parser = argparse.ArgumentParser(description="Torrent Seeder")
+    parser.add_argument("command", help="Command to execute (e.g., 'seed')")
+    parser.add_argument("torrent_file", help="Path to the torrent file")
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    # if args.command == "seed":
-    #     start_seeder(args.torrent_file)
-    # else:
-    #     print("Invalid command. Use 'seed' to start seeding.")
+    if args.command == "seed":
+        start_seeder(args.torrent_file)
+    else:
+        print("Invalid command. Use 'seed' to start seeding.")
 
 if __name__ == "__main__":
     main()
