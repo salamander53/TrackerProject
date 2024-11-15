@@ -7,8 +7,7 @@ import ProtectedRoute from "./component/ProtectedRoutes";
 import PasswordReset from "./component/PasswordReset";
 import PasswordResetRequest from "./component/PasswordResetRequest";
 import SideNavigation from "./component/SideNav/nav";
-import Download from "./component/Download copy/download";
-import Upload from "./component/Upload/upload";
+import Home from "./component/Home/home";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap/dist/js/bootstrap.bundle.js";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -34,8 +33,7 @@ function App() {
           <SideNavigation
             content={
               <Routes element={<ProtectedRoute />}>
-                <Route path="/upload" element={<Upload />} />
-                <Route path="/download" element={<Download />} />
+                <Route path="/home" element={<Home />} />
               </Routes>
             }
           />
