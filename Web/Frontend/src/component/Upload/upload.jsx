@@ -2,9 +2,10 @@ import { useState, useContext, useEffect } from "react";
 // import AuthContext from "../../context/AuthContext"; // giả sử bạn đã thiết lập AuthContext
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AxiosInstance from "../Things/AxiosInstance";
 
 export default function Upload() {
-  const [fileUpload, setFileUpload] = useState([
+  const [filesUpload, setfilesUpload] = useState([
     {
       id: 1,
       name: "file 1",
@@ -20,21 +21,18 @@ export default function Upload() {
       totalSize: "100mb",
     },
   ]);
-
-  useEffect(() => {
-    AxiosInstance.get(`patients/`)
-      .then((res) => setData(res.data))
-      .catch((err) => console.log(err));
-  }, []);
-
   const [selectedCard, setSelectedCard] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [torrentName, setTorrentName] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  // const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [fileInfo, setFileInfo] = useState(null);
   // const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    AxiosInstance.get(``)
+      .then((res) => setfilesUpload(res.data))
+      .catch((err) => console.log(err));
+  }, []);
 
   const handleShow = (id) => {
     setSelectedCard(selectedCard === id ? null : id);
@@ -64,53 +62,40 @@ export default function Upload() {
       toast.error("No file selected. Please choose a file to upload.");
       return;
     }
-    if (!torrentName) {
-      toast.error("Please enter a torrent name.");
-      return;
-    }
-
     setUploading(true);
+
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("torrentName", torrentName);
-    formData.append("displayName", displayName);
+    formData.append("torrentName", file.name);
 
-    // try {
-    //   const response = await fetch(
-    //     "https://torrent-backend-3.vercel.app/generate-torrent",
-    //     {
-    //       method: "POST",
-    //       headers: {
-    //         Authorization: `Bearer ${user.token}`,
-    //       },
-    //       body: formData,
-    //     }
-    //   );
+    try {
+      const response = await AxiosInstance.post(``, formData);
+      console.log(response);
 
-    //   if (!response.ok) {
-    //     const errorData = await response.json();
-    //     throw new Error(
-    //       errorData.error ||
-    //         "An error occurred while generating the torrent file."
-    //     );
-    //   }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            "An error occurred while generating the torrent file."
+        );
+      }
 
-    //   const blob = await response.blob();
-    //   const downloadUrl = window.URL.createObjectURL(blob);
-    //   const link = document.createElement("a");
-    //   link.href = downloadUrl;
-    //   link.download = `${torrentName}.torrent`;
-    //   document.body.appendChild(link);
-    //   link.click();
-    //   link.remove();
-    //   window.URL.revokeObjectURL(downloadUrl);
-    //   toast.success("Torrent file generated successfully!");
-    // } catch (error) {
-    //   toast.error(error.message || "An error occurred.");
-    // } finally {
-    //   setUploading(false);
-    //   setShowModal(false);
-    // }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${file.name}.torrent`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success("Torrent file generated successfully!");
+    } catch (error) {
+      toast.error(error.message || "An error occurred.");
+    } finally {
+      setUploading(false);
+      // setShowModal(false);
+    }
   };
 
   return (
@@ -137,20 +122,20 @@ export default function Upload() {
           >
             Create torrent <i className="bi bi-plus"></i>
           </button>
-          <button className="btn btn-primary">
+          {/* <button className="btn btn-primary">
             Add torrent <i className="bi bi-plus"></i>
-          </button>
+          </button> */}
         </div>
       </div>
 
       <div className="d-flex flex-column align-items-center justify-content-center px-1 my-3">
         <div className="w-100 rounded-4 bg-white border shadow">
-          {fileUpload.map((d) => (
+          {filesUpload.map((d) => (
             <div key={d.id} className="my-3 border-bottom">
               <div className="d-flex align-items-center p-3">
                 <div className="flex-shrink-0 me-3">
                   <i
-                    className="bi bi-download"
+                    className="bi bi-upload"
                     style={{ fontSize: "1.5rem" }}
                   ></i>
                 </div>
@@ -235,20 +220,21 @@ export default function Upload() {
                 </p> */}
                 <p>{file && "1 File, " + fileInfo.size}</p>
               </div>
-              <div className="mb-3">
-                <label for="saveLocation" className="form-label">
-                  Save torrent file location
-                </label>
-                <input
-                  type="text"
-                  id="saveLocation"
-                  className="form-control"
-                  value="C:\Users\Do Truong Khoa\Downloads"
-                  readonly
-                />
-                <button className="btn btn-link">Change</button>
+              <div class="mb-3">
+                <label class="form-label">Download this torrent to:</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    value="C:\Users\Do Truong Khoa\Downloads"
+                    readonly
+                  />
+                  <button class="btn btn-outline-secondary" type="button">
+                    Change
+                  </button>
+                </div>
               </div>
-              <div className="form-check">
+              {/* <div className="form-check">
                 <input
                   type="checkbox"
                   className="form-check-input"
@@ -257,7 +243,7 @@ export default function Upload() {
                 <label className="form-check-label" for="startSeeding">
                   Start seeding when created
                 </label>
-              </div>
+              </div> */}
             </div>
             <div className="modal-footer">
               <button
