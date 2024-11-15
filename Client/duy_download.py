@@ -164,7 +164,8 @@ def start_leecher(torrent_file, port=9999):
     info_hash = calculate_info_hash(torrent_data['info'])
     #server_socket 
     ###
-    #asyncio.run(download_connection(info_hash, peer_list[0], peer_id,))
+    print(peer_list[0]['ip'], peer_list[0]['port'] )
+    asyncio.run(download_connection(info_hash, peer_list[0], peer_id,))
     
     ###
 def main():
