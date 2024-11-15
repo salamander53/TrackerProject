@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from "react";
 // import AuthContext from "../../context/AuthContext"; // giả sử bạn đã thiết lập AuthContext
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import AxiosInstance from "../Things/AxiosInstance";
+import AxiosInstance from "../AxiosInstance";
 
 export default function Upload() {
   const [filesUpload, setfilesUpload] = useState([

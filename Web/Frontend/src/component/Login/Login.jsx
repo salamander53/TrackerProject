@@ -39,46 +39,55 @@ const Login = () => {
     }
 
     return (
-        <div className={"myBackground "}>
-            <form onSubmit={handleSubmit(submission)}>
-                <Box className={"whiteBox"}>
+        <div className="d-flex align-items-center justify-content-center vh-100 myBackground">
+      <form
+        onSubmit={handleSubmit(submission)}
+        className="p-4 bg-white rounded shadow-sm"
+        style={{ width: "300px" }}
+      >
+        <h3 className="text-center mb-4">LOGIN PAGE</h3>
 
-                    <Box className={"itemBox"}>
-                        <Box className={"title"}> LOGIN PAGE</Box>
-                    </Box>
-
-                    <Box className={"itemBox"}>
-                        <MyTextField
-                            label={"Email"}
-                            name={"email"}
-                            control={control}
-                        />
-                    </Box>
-
-                    <Box className={"itemBox"}>
-                        <MyPassField
-                            label={"Password"}
-                            name={"password"}
-                            control={control}
-                        />
-                    </Box>
-
-                    <Box className={"itemBox"}>
-                        <MyButton
-                            label={"Login"}
-                            type={"submit"}
-                            disabled={loading} // Disable button khi đang loading
-                        />
-                    </Box>
-
-                    <Box className={"itemBox"} sx={{ flexDirection: 'column' }}>
-                        {/* <Link to="/register"> No account yet? Please register! </Link> */}
-                        <Link className='text-decoration-none' to="/request/password_reset"> Forgot your password? Click here! </Link>
-                    </Box>
-
-                </Box>
-            </form>
+        <div className="mb-3">
+          <label htmlFor="email" className="form-label">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            className="form-control"
+            // {...register("email", { required: true })}
+          />
         </div>
+
+        <div className="mb-3">
+          <label htmlFor="password" className="form-label">
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            className="form-control"
+            // {...register("password", { required: true })}
+          />
+        </div>
+
+        <div className="d-grid">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading} // Disable button khi đang loading
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </div>
+
+        <div className="mt-3 text-center">
+          <Link className="text-decoration-none" to="/request/password_reset">
+            Forgot your password? Click here!
+          </Link>
+        </div>
+      </form>
+    </div>
     )
 
 }
