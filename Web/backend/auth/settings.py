@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'users', 
     'corsheaders',
     'knox',
+    'torrents',
     'django_rest_passwordreset',
 ]
 

@@ -138,7 +138,7 @@ export default function Home() {
       console.log("FormData:", formData);
 
       // Gửi FormData lên server
-      const res = await AxiosInstance.post("torrent/", formData);
+      const res = await AxiosInstance.post("torrents/", formData);
       console.log(res);
       toast.success("File uploaded successfully!");
     } catch (error) {
