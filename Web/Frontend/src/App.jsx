@@ -26,7 +26,7 @@ function App() {
       <ToastContainer />
       {noNavbar ? (
         <Routes>
-          {/* <Route path="/" element={<Login />} /> */}
+          <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
             path="/request/password_reset"
@@ -37,8 +37,10 @@ function App() {
       ) : (
         <SideNavigation
           content={
-            <Routes element={<ProtectedRoute />}>
-              <Route path="/home" element={<Home />} />
+            <Routes>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/home" element={<Home />} />
+              </Route>
             </Routes>
           }
         />

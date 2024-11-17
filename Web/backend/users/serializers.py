@@ -10,7 +10,7 @@ class LoginSerializer(serializers.Serializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret.pop('password', None)
-        return 
+        return ret
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta: 
