@@ -148,7 +148,11 @@ def create_handshake(info_hash, peer_id):
     reserved = b'\x00' * 8
     return struct.pack('!B', pstrlen) + pstr + reserved + info_hash + peer_id
 
-
+def start_download(info_hash, peer, peer_id):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(download_connection(info_hash, peer, peer_id))
+    loop.close()
 
 
 def start_leecher(torrent_file, port=9999):

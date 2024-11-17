@@ -37,13 +37,56 @@ def torrents_list(request, format=None):
         peer_id = generate_peer_id()
         peer_list = announce_to_tracker(torrent_data, 9999, peer_id, 'leecher')
         print("Phần tử đầu tiên:", peer_list)
-        return JsonResponse({
-            'trackerurl': tracker_url,
 
-        })
+        # Gửi tín hiệu tới Seeder qua API notify_seeder
+        seeder = peer_list[0]
+        notify_payload = {
+            'seeder_ip': '192.168.1.9',
+            'seeder_port': 8180,
+            'info_hash': calculate_info_hash(torrent_data['info']).hex(),
+        }
+        try:
+            notify_response = requests.post('http://127.0.0.1:8000/notify/', json=notify_payload)
+            if notify_response.status_code == 200:
+                return JsonResponse({
+                    'trackerurl': tracker_url,
+                    'peers': peer_list,
+                    'message': 'Seeder notified successfully',
+                })
+            else:
+                return JsonResponse({
+                    'trackerurl': tracker_url,
+                    'message': 'Failed to notify Seeder',
+                }, status=notify_response.status_code)
+        except requests.RequestException as e:
+            return JsonResponse({'error': f'Error notifying Seeder: {str(e)}'}, status=500)
     
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-    
+
+@api_view(['POST'])
+def notify_seeder(request):
+    """
+    API để thông báo seeder bắt đầu gửi file tới server.
+    """
+    seeder_ip = request.data.get('seeder_ip')
+    seeder_port = request.data.get('seeder_port')
+    info_hash = request.data.get('info_hash')
+    print("posted to API notify_seeder")
+    if not (seeder_ip and seeder_port ):
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+    # Gửi tín hiệu tới seeder
+    try:
+        # Tạo kết nối TCP tới seeder
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((seeder_ip, int(seeder_port)))
+            # message = f"START_TRANSFER:{info_hash}".encode()
+            # sock.sendall(message)
+            print(f"Sent START_TRANSFER signal to seeder {seeder_ip}:{seeder_port}")
+            return JsonResponse({'message': 'Seeder notified successfully'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
     
 @api_view(['GET', 'PUT', 'DELETE'])
 def torrents_detail(request, pk, format=None):

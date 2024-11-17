@@ -97,7 +97,7 @@ def generate_torrent(file_path, announce_list, torrent_name):
     }
 
     # Tạo file torrent
-    output_path = os.path.join("C:\\Users\\HP\\Downloads", f"{torrent_name}.torrent")
+    output_path = os.path.join("C:\\Users\\Do Truong Khoa\\Downloads", f"{torrent_name}.torrent")
     with open(output_path, "wb") as torrent_file:
         torrent_file.write(bencodepy.encode(torrent_data))
 
@@ -126,7 +126,7 @@ def bencode_pieces(file_path, piece_length):
 # Ví dụ sử dụng
 if __name__ == "__main__":
     # Thay đổi đường dẫn và tên file theo nhu cầu
-    file_path = "C:/Users/HP/Downloads/Report.pdf"
+    file_path = "C:/Users/Do Truong Khoa/Downloads/Task1.pdf"
     announce_list = ["http://48.210.50.194:8080/announce"]
     torrent_name = "MyTorrent"
 
@@ -170,15 +170,31 @@ def start_seeder(torrent_file, port=8180):
     announce_to_tracker(torrent_data, port, peer_id, 'seeder')
     
     # Load the file into memory for simplicity
-    file_path = "C:/Users/HP/Downloads/Report.pdf"
+    file_path = "C:/Users/Do Truong Khoa/Downloads/Task1.pdf"
     #file_path = os.path.join(os.getcwd(), torrent_data['info']['name'].decode())
     file_buffer = read_file(file_path)
     print(f"Starting seeder for file: {torrent_data['info']['name'].decode()}")
 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('0.0.0.0', port))
-    server_socket.listen(5)
-    print(f"Seeder listening on port {port}")
+    # server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # server_socket.bind(('0.0.0.0', port))
+    # server_socket.listen(5)
+    # print(f"Seeder listening on port {port}")
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.bind(('0.0.0.0', port))
+        server_socket.listen(1)
+        print(f"Seeder is listening on {'0.0.0.0'}:{port}...")
+
+        while True:
+            client_socket, addr = server_socket.accept()
+            print(f"Connection from {addr}")
+            data = client_socket.recv(1024).decode()
+            if data.startswith("START_TRANSFER"):
+                info_hash = data.split(":")[1]
+                print(f"Received START_TRANSFER for info_hash: {info_hash}")
+                # Bắt đầu gửi file hoặc thực hiện logic khác
+                # client_socket.close()
+    
     """
     while True:
         conn, addr = server_socket.accept()

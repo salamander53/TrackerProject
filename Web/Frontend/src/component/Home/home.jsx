@@ -423,6 +423,10 @@ export default function Home() {
     setTorrentFile(selectedFile);
   };
 
+  const handleCancel = () => {
+    setTorrentFile(null);
+  };
+
   const handleFileUpload = async () => {
     if (!torrentFile) {
       setError("No file selected.");
@@ -579,6 +583,7 @@ export default function Home() {
                 type="button"
                 className="btn btn-secondary"
                 data-bs-dismiss="modal"
+                onClick={handleCancel}
               >
                 Cancel
               </button>
