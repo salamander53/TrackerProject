@@ -7,7 +7,6 @@ import parseTorrent from "parse-torrent";
 import { Buffer } from "buffer"; // Import Buffer từ thư viện buffer
 import bencode from "bencode";
 
-
 // export default function Home() {
 //   const [filesUpload, setfilesUpload] = useState([
 //     {
@@ -412,52 +411,40 @@ import bencode from "bencode";
 // }
 
 export default function Home() {
-  // const [torrentFiles, setTorrentFiles] = useState([]); // Array to hold multiple torrent files
+  const [torrentFile, setTorrentFile] = useState(null);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   // const [downloading, setDownloading] = useState({}); // Object to hold downloading status for each file
   // const [downloadProgress, setDownloadProgress] = useState({});
   // const { user } = useContext(AuthContext);
 
-  const handleFileUpload = async (event) => {
-    setError(null);
-    setUploading(true);
-    const file = event.target.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
-    // AxiosInstance.post('/upload-torrent/', formData)
-    //     .then(response => {
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    setTorrentFile(selectedFile);
+  };
 
-    //         console.log('Upload Successful:', response.data);
-    //     })
-    //     .catch(error => {
-    //         console.error('Upload Failed:', error);
-    //     });
-    try { 
-      const response = await AxiosInstance.post('/upload-torrent/', formData); 
-      console.log('Upload Successful:', response.data); 
-    } catch (error) { 
-      console.error('Upload Failed:', error); 
-      setError('Upload Failed: ' + error.message); 
-    } finally { 
-      setUploading(false);
+  const handleFileUpload = async () => {
+    if (!torrentFile) {
+      setError("No file selected.");
+      return;
     }
 
+    setError(null);
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", torrentFile);
+
+    try {
+      const response = await AxiosInstance.post("/upload-torrent/", formData);
+      console.log("Upload Successful:", response.data);
+    } catch (error) {
+      console.error("Upload Failed:", error);
+      setError("Upload Failed: " + error.message);
+    } finally {
+      setUploading(false);
+    }
   };
-    
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
   //   try {
   //     const response = await fetch(
@@ -495,22 +482,134 @@ export default function Home() {
   // };
 
   return (
-    <div className="flex flex-col items-center p-8 font-sans max-w-lg mx-auto border border-gray-300 rounded-lg shadow-lg">
-
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Torrent File Downloader
-      </h1>
-      <input
-        type="file"
-        onChange={handleFileUpload}
-        className="mb-4 p-2 border border-gray-300 rounded w-full"
-      />
-
+    <>
       {uploading && (
         <div className="text-blue-500 font-semibold">Uploading...</div>
       )}
+      <div className="d-flex flex-column align-items-center justify-content-center mb-4 pt-2">
+        <div className="w-100 rounded bg-white border shadow">
+          <div className="d-flex justify-content-between align-items-center px-2 py-2 text-dark">
+            <div className="d-flex gap-2">
+              <button className="btn btn-outline-secondary d-flex align-items-center">
+                <i className="bi bi-grid-3x3-gap me-1"></i>
+                <i className="bi bi-chevron-down"></i>
+              </button>
+              <button className="btn btn-outline-secondary dropdown-toggle">
+                Show: All
+              </button>
+              <button className="btn btn-outline-secondary dropdown-toggle">
+                Sort: Most Recent
+              </button>
+            </div>
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-secondary"
+                data-bs-toggle="modal"
+                data-bs-target="#createTorrentModal"
+              >
+                Create torrent <i className="bi bi-plus"></i>
+              </button>
+              <button
+                className="btn btn-outline-secondary"
+                data-bs-toggle="modal"
+                data-bs-target="#addTorrentModal"
+              >
+                Add torrent <i className="bi bi-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {error && <p className="text-red-500 mt-4">{error}</p>}
+      {/* MODALS */}
+      <div
+        className="modal fade"
+        id="addTorrentModal"
+        tabIndex="-1"
+        aria-labelledby="addTorrentModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="addTorrentModalLabel">
+                Adding Torrent
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <div>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="form-control mb-3"
+                  accept=".torrent"
+                />
+                <p>
+                  Peers: 0 | Seeds: 0{" "}
+                  <span className="badge bg-warning text-dark">
+                    Low peers and seeds
+                  </span>
+                </p>
+              </div>
 
-      {/* {torrentFiles.map((file) => (
+              <div className="mb-3">
+                <label className="form-label">Download this torrent to:</label>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control"
+                    value="C:\\Users\\Do Truong Khoa\\Downloads"
+                    readOnly
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    Change
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleFileUpload}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// <div className="flex flex-col items-center p-8 font-sans max-w-lg mx-auto border border-gray-300 rounded-lg shadow-lg">
+
+//   <h1 className="text-3xl font-bold text-gray-800 mb-6">
+//     Torrent File Downloader
+//   </h1>
+//   <input
+//     type="file"
+//     onChange={handleFileUpload}
+//     className="mb-4 p-2 border border-gray-300 rounded w-full"
+//   />
+
+{
+  /* {torrentFiles.map((file) => (
         <div key={file.id} className="mt-6 bg-gray-100 p-4 rounded-lg w-full">
           <h2 className="text-xl font-semibold mb-4">Uploaded File Info</h2>
           <p className="mb-2">
@@ -546,9 +645,7 @@ export default function Home() {
             </div>
           )}
         </div>
-      ))} */}
-      {error && <p className="text-red-500 mt-4">{error}</p>}
-    </div>
-  );
-  
+      ))} */
 }
+//
+// </div>
