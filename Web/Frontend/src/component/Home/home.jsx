@@ -425,18 +425,28 @@ export default function Home() {
     const file = event.target.files[0];
     const formData = new FormData();
     formData.append("file", file);
-    AxiosInstance.post('/upload-torrent/', formData)
-        .then(response => {
+    // AxiosInstance.post('/upload-torrent/', formData)
+    //     .then(response => {
 
-            console.log('Upload Successful:', response.data);
-        })
-        .catch(error => {
-            console.error('Upload Failed:', error);
-        });
+    //         console.log('Upload Successful:', response.data);
+    //     })
+    //     .catch(error => {
+    //         console.error('Upload Failed:', error);
+    //     });
+    try { 
+      const response = await AxiosInstance.post('/upload-torrent/', formData); 
+      console.log('Upload Successful:', response.data); 
+    } catch (error) { 
+      console.error('Upload Failed:', error); 
+      setError('Upload Failed: ' + error.message); 
+    } finally { 
+      setUploading(false);
+    }
+
   };
     
 
-
+  
 
 
 
@@ -486,7 +496,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center p-8 font-sans max-w-lg mx-auto border border-gray-300 rounded-lg shadow-lg">
-      <ToastContainer />
 
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
         Torrent File Downloader

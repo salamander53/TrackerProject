@@ -14,27 +14,22 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import ErrorBoundary from "./component/error";
 function App() {
   const location = useLocation();
   const noNavbar =
-    location.pathname === "/register" ||
-    location.pathname === "/" ||
-    location.pathname.includes("password");
+    location.pathname === "/register" || location.pathname === "/" || location.pathname.includes("password")
   return (
     <>
       <ToastContainer />
-      {noNavbar ? (
+      {noNavbar ? 
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route
-            path="/request/password_reset"
-            element={<PasswordResetRequest />}
-          />
+          <Route path="/request/password_reset" element={<PasswordResetRequest />} />
           <Route path="/password-reset/:token" element={<PasswordReset />} />
         </Routes>
-      ) : (
+        : 
         <SideNavigation
           content={
             <Routes>
@@ -44,7 +39,7 @@ function App() {
             </Routes>
           }
         />
-      )}
+      }
     </>
   );
 }
