@@ -13,3 +13,10 @@ class Torrents(models.Model):
     
     def __str__(self):
         return self.title
+    
+class TorrentFile(models.Model):
+    file = models.FileField(upload_to='torrents/store_torrent/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file.name

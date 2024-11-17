@@ -7,6 +7,7 @@ import parseTorrent from "parse-torrent";
 import { Buffer } from "buffer"; // Import Buffer từ thư viện buffer
 import bencode from "bencode";
 
+
 // export default function Home() {
 //   const [filesUpload, setfilesUpload] = useState([
 //     {
@@ -411,7 +412,134 @@ import bencode from "bencode";
 // }
 
 export default function Home() {
-  <>
-    Heloooooooooooooooo
-  </>
+  // const [torrentFiles, setTorrentFiles] = useState([]); // Array to hold multiple torrent files
+  const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  // const [downloading, setDownloading] = useState({}); // Object to hold downloading status for each file
+  // const [downloadProgress, setDownloadProgress] = useState({});
+  // const { user } = useContext(AuthContext);
+
+  const handleFileUpload = async (event) => {
+    setError(null);
+    setUploading(true);
+    const file = event.target.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+    AxiosInstance.post('/upload-torrent/', formData)
+        .then(response => {
+
+            console.log('Upload Successful:', response.data);
+        })
+        .catch(error => {
+            console.error('Upload Failed:', error);
+        });
+  };
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //   try {
+  //     const response = await fetch(
+  //       "http://127.0.0.1:8000/upload-torrent/",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(
+  //         errorData.error || "An error occurred while uploading the file."
+  //       );
+  //     }
+
+  //     const data = await response.json();
+  //     const newFile = {
+  //       id: Date.now(),
+  //       name: file.name,
+  //       torrentInfo: data.torrentInfo,
+  //       fileContent: data.fileContent,
+  //     };
+
+  //     setTorrentFiles((prevFiles) => [...prevFiles, newFile]);
+  //     toast.success("File uploaded successfully!");
+  //   } catch (error) {
+  //     setError(error.message);
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
+
+  return (
+    <div className="flex flex-col items-center p-8 font-sans max-w-lg mx-auto border border-gray-300 rounded-lg shadow-lg">
+      <ToastContainer />
+
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        Torrent File Downloader
+      </h1>
+      <input
+        type="file"
+        onChange={handleFileUpload}
+        className="mb-4 p-2 border border-gray-300 rounded w-full"
+      />
+
+      {uploading && (
+        <div className="text-blue-500 font-semibold">Uploading...</div>
+      )}
+
+      {/* {torrentFiles.map((file) => (
+        <div key={file.id} className="mt-6 bg-gray-100 p-4 rounded-lg w-full">
+          <h2 className="text-xl font-semibold mb-4">Uploaded File Info</h2>
+          <p className="mb-2">
+            <strong>File Name:</strong> {file.name}
+          </p>
+          <p className="mb-2">
+            <strong>Tracker URL:</strong> {file.torrentInfo.trackerURL}
+          </p>
+          <p className="mb-2">
+            <strong>File Length:</strong> {file.torrentInfo.length}
+          </p>
+          <p className="mb-2">
+            <strong>Piece Length:</strong> {file.torrentInfo.pieceLength}
+          </p>
+          <p className="mb-2">
+            <strong>Info Hash:</strong> {file.torrentInfo.infoHash}
+          </p>
+
+          <button
+            onClick={() => handleDownload(file)}
+            className="mt-4 p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+            disabled={downloading[file.id]}
+          >
+            {downloading[file.id] ? "Downloading..." : "Download File"}
+          </button>
+
+          {downloading[file.id] && downloadProgress[file.id] && (
+            <div className="mt-4 w-full bg-gray-200 rounded-full h-4">
+              <div
+                className="bg-blue-500 h-4 rounded-full"
+                style={{ width: `${downloadProgress[file.id]}%` }}
+              ></div>
+            </div>
+          )}
+        </div>
+      ))} */}
+      {error && <p className="text-red-500 mt-4">{error}</p>}
+    </div>
+  );
+  
 }
