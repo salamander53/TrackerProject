@@ -5,6 +5,10 @@ import hashlib
 import os
 import socket
 import argparse
+import signal 
+import sys
+import struct
+import math
 
 def decode_bencode(bencoded_value):
     if chr(bencoded_value[0]).isdigit():
@@ -97,7 +101,7 @@ def generate_torrent(file_path, announce_list, torrent_name):
     }
 
     # Tạo file torrent
-    output_path = os.path.join("C:\\Users\\Do Truong Khoa\\Downloads", f"{torrent_name}.torrent")
+    output_path = os.path.join("C:\\Users\\HP\\Downloads", f"{torrent_name}.torrent")
     with open(output_path, "wb") as torrent_file:
         torrent_file.write(bencodepy.encode(torrent_data))
 
@@ -126,8 +130,9 @@ def bencode_pieces(file_path, piece_length):
 # Ví dụ sử dụng
 if __name__ == "__main__":
     # Thay đổi đường dẫn và tên file theo nhu cầu
-    file_path = "C:/Users/Do Truong Khoa/Downloads/Task1.pdf"
-    announce_list = ["http://48.210.50.194:8080/announce"]
+    file_path = "C:/Users/HP/Downloads/Script.docx"
+    # announce_list = ["http://48.210.50.194:8080/announce"]
+    announce_list = ["http://127.0.0.1:8080/announce"]
     torrent_name = "MyTorrent"
 
     torrent_file_path = generate_torrent(file_path, announce_list, torrent_name)
@@ -138,25 +143,59 @@ def read_file(file_path):
     with open(file_path, 'rb') as f:
         return f.read()
 def send_handshake(conn, info_hash, peer_id):
-    handshake = b'\x13BitTorrent protocol' + info_hash + peer_id
+    # handshake = b'\x13BitTorrent protocol' + info_hash + peer_id
+    # conn.send(handshake)
+    pstr = b"BitTorrent protocol"
+    pstrlen = len(pstr)
+    reserved = b'\x00' * 8
+    handshake = struct.pack('!B', pstrlen) + pstr + reserved + info_hash + peer_id
     conn.send(handshake)
+
 def send_bitfield(conn, total_pieces):
-    bitfield_length = (total_pieces + 7) // 8
-    bitfield = bytearray([0xFF] * bitfield_length)  # All pieces available
-    message = bytearray([0, 5]) + bitfield
-    message_length = len(message)
-    message = message[:2] + message_length.to_bytes(2, 'big') + message[2:]
-    conn.send(message)
+    # bitfield_length = (total_pieces + 7) // 8
+    # bitfield = bytearray([0xFF] * bitfield_length)  # All pieces available
+    # message = bytearray([0, 5]) + bitfield
+    # message_length = len(message)
+    # message = message[:2] + message_length.to_bytes(2, 'big') + message[2:]
+    # conn.send(message)
+
+    bitfield_length = (total_pieces + 7) // 8 
+    bitfield = bytearray([0xFF] * bitfield_length) # All pieces available 
+    bitfield_message = bytearray(4) + bytearray([5]) + bitfield 
+    struct.pack_into('!I', bitfield_message, 0, len(bitfield_message) - 4) 
+    print("Sent bitfield message") 
+    conn.send(bitfield_message)
 def send_unchoke(conn):
-    message = bytearray([0, 1])
-    message_length = len(message)
-    message = message[:2] + message_length.to_bytes(2, 'big') + message[2:]
-    conn.send(message)
+    unchoke_message = bytearray(4 + 1)  # 4 bytes cho length và 1 byte cho ID
+    struct.pack_into('!I', unchoke_message, 0, 1)  # Ghi length (1)
+    unchoke_message[4] = 1  # Ghi ID (1)
+    
+    print("Sent unchoke message")
+    # message = bytearray([0, 1])
+    # message_length = len(message)
+    # message = message[:2] + message_length.to_bytes(2, 'big') + message[2:]
+    conn.send(unchoke_message)
 def send_piece_message(conn, piece_index, begin, piece_data):
+    # message_length = 9 + len(piece_data)
+    # message = bytearray([0]) + message_length.to_bytes(4, 'big') + bytearray([7]) + piece_index.to_bytes(4, 'big') + begin.to_bytes(4, 'big') + piece_data
+    # conn.send(message)
+
     message_length = 9 + len(piece_data)
-    message = bytearray([0]) + message_length.to_bytes(4, 'big') + bytearray([7]) + piece_index.to_bytes(4, 'big') + begin.to_bytes(4, 'big') + piece_data
-    conn.send(message)
-def start_seeder(torrent_file, port=8180):
+    piece_message = bytearray(4 + message_length)  # 4 bytes cho length
+
+    # Ghi length vào thông điệp
+    struct.pack_into('!I', piece_message, 0, message_length)
+    # Ghi ID (7 cho Piece)
+    piece_message[4] = 7
+    # Ghi piece index và begin offset
+    struct.pack_into('!I', piece_message, 5, piece_index)
+    struct.pack_into('!I', piece_message, 9, begin)
+    # Thêm dữ liệu thực tế
+    piece_message[13:] = piece_data
+    print(f"Sent piece message for piece {piece_index}, begin={begin}, length={len(piece_data)}")
+    conn.send(piece_message)
+    
+def start_seeder(torrent_file, port=5050):
     file_content = read_file(torrent_file)
     torrent_data, _ = decode_bencode(file_content)
     #torrent_data = bencodepy.decode(file_content)
@@ -170,32 +209,36 @@ def start_seeder(torrent_file, port=8180):
     announce_to_tracker(torrent_data, port, peer_id, 'seeder')
     
     # Load the file into memory for simplicity
-    file_path = "C:/Users/Do Truong Khoa/Downloads/Task1.pdf"
+    file_path = "C:/Users/HP/Downloads/Script.docx"
     #file_path = os.path.join(os.getcwd(), torrent_data['info']['name'].decode())
     file_buffer = read_file(file_path)
     print(f"Starting seeder for file: {torrent_data['info']['name'].decode()}")
 
-    # server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # server_socket.bind(('0.0.0.0', port))
-    # server_socket.listen(5)
-    # print(f"Seeder listening on port {port}")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('0.0.0.0', port))
+    server_socket.listen(5)
+    print(f"Seeder listening on port {port}")
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind(('0.0.0.0', port))
-        server_socket.listen(1)
-        print(f"Seeder is listening on {'0.0.0.0'}:{port}...")
+    def signal_handler(sig, frame): 
+        print('Shutting down server...') 
+        server_socket.close() # Đóng server socket 
+        sys.exit(0) 
+    signal.signal(signal.SIGINT, signal_handler)
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+    #     server_socket.bind(('0.0.0.0', port))
+    #     server_socket.listen(1)
+    #     print(f"Seeder is listening on {'0.0.0.0'}:{port}...")
 
-        while True:
-            client_socket, addr = server_socket.accept()
-            print(f"Connection from {addr}")
-            data = client_socket.recv(1024).decode()
-            if data.startswith("START_TRANSFER"):
-                info_hash = data.split(":")[1]
-                print(f"Received START_TRANSFER for info_hash: {info_hash}")
-                # Bắt đầu gửi file hoặc thực hiện logic khác
-                # client_socket.close()
+        # while True:
+        #     client_socket, addr = server_socket.accept()
+        #     print(f"Connection from {addr}")
+        #     data = client_socket.recv(1024).decode()
+        #     if data.startswith("START_TRANSFER"):
+        #         info_hash = data.split(":")[1]
+        #         print(f"Received START_TRANSFER for info_hash: {info_hash}")
+        #         # Bắt đầu gửi file hoặc thực hiện logic khác
+        #         # client_socket.close()
     
-    """
     while True:
         conn, addr = server_socket.accept()
         print(f"Connection received from {addr}")
@@ -206,7 +249,6 @@ def start_seeder(torrent_file, port=8180):
             if not data:
                 break
             buffer += data
-
             # Handshake processing
             if len(buffer) >= 68 and buffer[1:20] == b'BitTorrent protocol':
                 print(f"Handshake received from {addr}")
@@ -223,9 +265,12 @@ def start_seeder(torrent_file, port=8180):
                 
                 message_id = buffer[4]
                 if message_id == 6 and message_length == 13:  # Piece request
-                    piece_index = int.from_bytes(buffer[5:9], 'big')
-                    begin = int.from_bytes(buffer[9:13], 'big')
-                    request_length = message_length - 9
+                    # piece_index = int.from_bytes(buffer[5:9], 'big')
+                    # begin = int.from_bytes(buffer[9:13], 'big')
+                    # request_length = message_length - 9
+                    piece_index = struct.unpack('>I', buffer[5:9])[0]  # Đọc piece index
+                    begin = struct.unpack('>I', buffer[9:13])[0]  # Đọc begin offset
+                    request_length = struct.unpack('>I', buffer[13:17])[0]  # Đọc độ dài yêu cầu
 
                     print(f"Received request for piece {piece_index}, begin={begin}, length={request_length}")
 
@@ -239,7 +284,7 @@ def start_seeder(torrent_file, port=8180):
 
         conn.close()
         print(f"Connection closed: {addr}")
-    """
+
 def main():
     parser = argparse.ArgumentParser(description="Torrent Seeder")
     parser.add_argument("command", help="Command to execute (e.g., 'seed')")

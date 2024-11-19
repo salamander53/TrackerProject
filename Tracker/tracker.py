@@ -3,6 +3,8 @@ import urllib.parse
 import bencodepy
 import time
 import hashlib
+import signal 
+import sys
 
 # Lưu trữ torrent với danh sách peer (trong bộ nhớ)
 torrents = {}
@@ -29,6 +31,7 @@ class TrackerHandler(BaseHTTPRequestHandler):
         parsed_url = urllib.parse.urlparse(self.path)
         if parsed_url.path == '/announce':
             self.AnnounceResponse(parsed_url)
+            print(torrents)
         else:
             self.send_error(404, "Not Found")
 
@@ -40,10 +43,10 @@ class TrackerHandler(BaseHTTPRequestHandler):
         port = query.get('port', [None])[0]
         ip = self.client_address[0]
         event = query.get('event', [None])[0]
-        peerType = query.get('peerType', [None])[0]
+        type = query.get('type', [None])[0]
 
         if info_hash:
-            if peerType == 'leecher':
+            if type == 'leecher':
                 peer_list = self.get_peers(info_hash)
                 compact_peer_list = bytes(self.compact_peers(peer_list))
                 self.CheckClientInfo(info_hash, peer_id, ip, port)
@@ -105,5 +108,10 @@ class TrackerHandler(BaseHTTPRequestHandler):
 # Khởi động máy chủ
 PORT = 8080
 with HTTPServer(("", PORT), TrackerHandler) as httpd:
+    def signal_handler(sig, frame): 
+        print('Shutting down server...') 
+        httpd.server_close() # Đóng server socket 
+        sys.exit(0) 
+    signal.signal(signal.SIGINT, signal_handler)
     print(f"BitTorrent tracker running on port {PORT}")
     httpd.serve_forever()
