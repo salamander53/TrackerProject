@@ -306,7 +306,7 @@ import bencode from "bencode";
 //               </h5>
 //               <button
 //                 type="button"
-//                 class="btn-close"
+//                 className="btn-close"
 //                 data-bs-dismiss="modal"
 //                 aria-label="Close"
 //               ></button>
@@ -328,7 +328,7 @@ import bencode from "bencode";
 //                 </p>
 //               </div>
 
-//               {/* <table class="table table-bordered">
+//               {/* <table className="table table-bordered">
 //                 <thead>
 //                   <tr>
 //                     <th scope="col">
@@ -349,55 +349,55 @@ import bencode from "bencode";
 //                 </tbody>
 //               </table> */}
 
-//               <div class="mb-3">
-//                 <label class="form-label">Download this torrent to:</label>
-//                 <div class="input-group">
+//               <div className="mb-3">
+//                 <label className="form-label">Download this torrent to:</label>
+//                 <div className="input-group">
 //                   <input
 //                     type="text"
-//                     class="form-control"
+//                     className="form-control"
 //                     value="C:\Users\Do Truong Khoa\Downloads"
 //                     readonly
 //                   />
-//                   <button class="btn btn-outline-secondary" type="button">
+//                   <button className="btn btn-outline-secondary" type="button">
 //                     Change
 //                   </button>
 //                 </div>
 //               </div>
 
-//               {/* <div class="form-check">
+//               {/* <div className="form-check">
 //                 <input
-//                   class="form-check-input"
+//                   className="form-check-input"
 //                   type="checkbox"
 //                   id="startDownload"
 //                   checked
 //                 />
-//                 <label class="form-check-label" for="startDownload">
+//                 <label className="form-check-label" for="startDownload">
 //                   Start downloading when torrent is added
 //                 </label>
 //               </div>
-//               <div class="form-check">
+//               <div className="form-check">
 //                 <input
-//                   class="form-check-input"
+//                   className="form-check-input"
 //                   type="checkbox"
 //                   id="dontShowDialog"
 //                 />
-//                 <label class="form-check-label" for="dontShowDialog">
+//                 <label className="form-check-label" for="dontShowDialog">
 //                   Don’t show this dialog next time I add a torrent
 //                 </label>
 //               </div> */}
 //             </div>
 
-//             <div class="modal-footer">
+//             <div className="modal-footer">
 //               <button
 //                 type="button"
-//                 class="btn btn-secondary"
+//                 className="btn btn-secondary"
 //                 data-bs-dismiss="modal"
 //               >
 //                 Cancel
 //               </button>
 //               <button
 //                 type="button"
-//                 class="btn btn-primary"
+//                 className="btn btn-primary"
 //                 onClick={(e) => handleAddTorrent(e)}
 //               >
 //                 Add
@@ -419,12 +419,17 @@ export default function Home() {
   // const { user } = useContext(AuthContext);
 
   const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    setTorrentFile(selectedFile);
+    if (torrentFile !== null) {
+      setTorrentFile(null);
+    } else {
+      const selectedFile = event.target.files[0];
+      setTorrentFile(selectedFile);
+    }
   };
 
   const handleCancel = () => {
     setTorrentFile(null);
+    setError(null);
   };
 
   const handleFileUpload = async () => {
@@ -445,6 +450,30 @@ export default function Home() {
     } catch (error) {
       console.error("Upload Failed:", error);
       setError("Upload Failed: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCreateTorrent = async () => {
+    if (!torrentFile) {
+      setError("No file selected.");
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", torrentFile);
+    try {
+      const response = await AxiosInstance.post("/generate_torrent/", formData);
+      console.log("Upload Successful:", response.data);
+      // toast.success("Torrent created successfully!");
+    } catch (error) {
+      console.error("Upload Failed:", error);
+      setError(
+        "Upload Failed: " + (error.response?.data?.message || error.message)
+      );
+      // toast.error("Failed to create torrent. Check your input and try again.");
     } finally {
       setUploading(false);
     }
@@ -525,7 +554,7 @@ export default function Home() {
         </div>
       </div>
       {error && <p className="text-red-500 mt-4">{error}</p>}
-      {/* MODALS */}
+      {/* MODAL AddTorrent */}
       <div
         className="modal fade"
         id="addTorrentModal"
@@ -544,6 +573,7 @@ export default function Home() {
                 className="btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={handleCancel}
               ></button>
             </div>
             <div className="modal-body">
@@ -568,7 +598,7 @@ export default function Home() {
                   <input
                     type="text"
                     className="form-control"
-                    value="C:\\Users\\Do Truong Khoa\\Downloads"
+                    value="C:\Users\...\Downloads"
                     readOnly
                   />
                   <button className="btn btn-outline-secondary" type="button">
@@ -593,6 +623,81 @@ export default function Home() {
                 onClick={handleFileUpload}
               >
                 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* MODAL CreateTorrent */}
+      <div
+        className="modal fade"
+        id="createTorrentModal"
+        tabIndex="-1"
+        aria-labelledby="createTorrentModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="createTorrentModalLabel">
+                Create Torrent
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+                onClick={handleCancel}
+              ></button>
+            </div>
+            <div className="modal-body">
+              {error && <div className="alert alert-danger">{error}</div>}
+              <div className="mb-3">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="form-control mb-3"
+                  accept=".zip,.rar,.txt,.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.mp3,.mp4,.avi,.mkv"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Download this torrent to:</label>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control"
+                    value="C:\\Users\\...\\Downloads"
+                    readOnly
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    Change
+                  </button>
+                </div>
+              </div>
+              {uploading && (
+                <div className="text-center">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p>Creating torrent...</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCreateTorrent}
+              >
+                Create Torrent
               </button>
             </div>
           </div>
