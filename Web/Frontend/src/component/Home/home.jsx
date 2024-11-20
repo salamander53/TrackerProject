@@ -409,7 +409,7 @@ import bencode from "bencode";
 //     </>
 //   );
 // }
-
+import { useRef } from "react";
 export default function Home() {
   const [torrentFile, setTorrentFile] = useState(null);
   const [error, setError] = useState(null);
@@ -417,6 +417,9 @@ export default function Home() {
   // const [downloading, setDownloading] = useState({}); // Object to hold downloading status for each file
   // const [downloadProgress, setDownloadProgress] = useState({});
   // const { user } = useContext(AuthContext);
+  const fileInputRef = useRef(null);
+
+  
 
   const handleFileChange = (event) => {
     if (torrentFile !== null) {
@@ -424,13 +427,17 @@ export default function Home() {
     } else {
       const selectedFile = event.target.files[0];
       setTorrentFile(selectedFile);
+      setError(null);
     }
   };
 
   const handleCancel = () => {
     setTorrentFile(null);
     setError(null);
+    if (fileInputRef.current) { fileInputRef.current.value = ''; }
   };
+
+
 
   const handleFileUpload = async () => {
     if (!torrentFile) {
@@ -464,6 +471,7 @@ export default function Home() {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", torrentFile);
+    console.log(fileInputRef)
     try {
       const response = await AxiosInstance.post("/generate_torrent/", formData);
       console.log("Upload Successful:", response.data);
@@ -516,9 +524,6 @@ export default function Home() {
 
   return (
     <>
-      {uploading && (
-        <div className="text-blue-500 font-semibold">Uploading...</div>
-      )}
       <div className="d-flex flex-column align-items-center justify-content-center mb-4 pt-2">
         <div className="w-100 rounded bg-white border shadow">
           <div className="d-flex justify-content-between align-items-center px-2 py-2 text-dark">
@@ -551,9 +556,16 @@ export default function Home() {
               </button>
             </div>
           </div>
+          <hr />
+          {uploading && (
+            <>
+            <div className="text-blue-500 font-semibold">Downloading...</div>
+            <hr />
+            </>
+          )}
         </div>
       </div>
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+      
       {/* MODAL AddTorrent */}
       <div
         className="modal fade"
@@ -583,6 +595,7 @@ export default function Home() {
                   onChange={handleFileChange}
                   className="form-control mb-3"
                   accept=".torrent"
+                  ref={fileInputRef}
                 />
                 <p>
                   Peers: 0 | Seeds: 0{" "}
@@ -609,6 +622,7 @@ export default function Home() {
             </div>
 
             <div className="modal-footer">
+              {error && <div className="alert alert-danger">{error}</div>}
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -620,10 +634,12 @@ export default function Home() {
               <button
                 type="button"
                 className="btn btn-primary"
+                {...(torrentFile ? { 'data-bs-dismiss': 'modal' } : {})}
                 onClick={handleFileUpload}
               >
                 Add
               </button>
+
             </div>
           </div>
         </div>
@@ -658,6 +674,7 @@ export default function Home() {
                   onChange={handleFileChange}
                   className="form-control mb-3"
                   accept=".zip,.rar,.txt,.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.mp3,.mp4,.avi,.mkv"
+                  ref={fileInputRef}
                 />
               </div>
               <div className="mb-3">
