@@ -690,14 +690,24 @@ async def start_seeder(output_path, file_path, port=5050):
     print(f"Starting seeder for file: {torrent_data['info']['name'].decode()}")
 
     # Start the server
-    server = await asyncio.start_server(
-        lambda r, w: handle_client(r, w, info_hash, peer_id, total_pieces, piece_length, file_buffer),
-        '0.0.0.0',
-        port,
-    )
-    async with server:
-        print(f"Seeder listening on port {port}")
-        await server.serve_forever()
+    # server = await asyncio.start_server(
+    #     lambda r, w: handle_client(r, w, info_hash, peer_id, total_pieces, piece_length, file_buffer),
+    #     '0.0.0.0',
+    #     port,
+    # )
+    # async with server:
+    #     print(f"Seeder listening on port {port}")
+    #     await server.serve_forever()
+    try: 
+        server = await asyncio.start_server( 
+            lambda r, w: handle_client(r, w, info_hash, peer_id, total_pieces, piece_length, file_buffer), 
+            '0.0.0.0', 
+            port, 
+        ) 
+        async with server: 
+            print(f"Seeder listening on port {port}") 
+            await server.serve_forever() 
+    except Exception as e: print(f"Error starting server: {e}")
 
 
 def main():

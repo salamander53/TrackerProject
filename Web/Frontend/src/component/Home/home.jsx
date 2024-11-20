@@ -410,6 +410,7 @@ import bencode from "bencode";
 //   );
 // }
 import { useRef } from "react";
+// import { table } from "console";
 export default function Home() {
   const [torrentFile, setTorrentFile] = useState(null);
   const [error, setError] = useState(null);
@@ -422,8 +423,8 @@ export default function Home() {
     'path_input': '',
     'path_output': ''
   })
+  const [seeds, setSeeds] = useState([])
   
-
   const handleFileChange = (event) => {
     if (torrentFile !== null) {
       setTorrentFile(null);
@@ -464,17 +465,23 @@ export default function Home() {
       setUploading(false);
     }
   };
+  const getFileName = (path) => { 
+    return path.substring(path.lastIndexOf('\\') + 1); // Lấy phần sau ký tự `\` cuối cùng 
+  };
 
   const handleCreateTorrent = async () => {
     setError(null);
     setUploading(true);
     const formData = new FormData();
+    formData.append("command", "run");
     formData.append("path_input", value.path_input);
     formData.append("path_output", value.path_output);
     console.log(formData)
+  
     try {
-      await AxiosInstance.post("/generate_torrent/", formData);
-      // console.log("Upload Successful:", response.data);
+      const response = await AxiosInstance.post("/generate_torrent/", formData);
+      setSeeds([...seeds, {name: getFileName(value.path_input), status: "run", task_id: response.data.task_id}])
+      console.log("Upload Successful:", response.data);
       // toast.success("Torrent created successfully!");
     } 
     catch (error) {
@@ -489,6 +496,31 @@ export default function Home() {
     }
   };
 
+  const handleStop = async (task_id) => {
+    setError(null);
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("command", "stop");
+    formData.append("task_id", task_id);
+    console.log(formData)
+  
+    try {
+      const response = await AxiosInstance.post("/generate_torrent/", formData);
+      console.log("Stoped Successful:", response.data);
+      // toast.success("Torrent created successfully!");
+      setSeeds(prevSeeds => prevSeeds.filter(seed => seed.task_id !== task_id));
+    } 
+    catch (error) {
+      console.error("Upload Failed:", error);
+      setError(
+        "Upload Failed: " + (error.response?.data?.message || error.message)
+      );
+      // toast.error("Failed to create torrent. Check your input and try again.");
+    } 
+    finally {
+      setUploading(false);
+    }
+  }
   //   try {
   //     const response = await fetch(
   //       "http://127.0.0.1:8000/upload-torrent/",
@@ -559,6 +591,31 @@ export default function Home() {
             </div>
           </div>
           <hr />
+          <div>
+          {seeds.length > 0 ? (
+            <table className="table table-hover table-striped align-middle">
+          <thead>
+              <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>User Action</th>
+              </tr>
+          </thead>
+          <tbody>
+          {seeds.map((d,i) => (
+            <tr key={i}>
+                <td style={{ width: 180, textTransform: 'uppercase', fontWeight: 500 }}>{d.name}</td>
+                <td style={{ width: 170 }}>{d.status = "run"? "Seeding":"Downloading"}</td>
+                <td>
+                    <button onClick={()=>handleStop(d.task_id)}  className="btn btn-sm btn-danger">stop</button>
+                </td>
+            </tr>
+
+          ))}
+          </tbody>
+          </table>
+          ):""}
+          </div>
           {uploading && (
             <>
             <div className="text-blue-500 font-semibold">Downloading...</div>
@@ -713,6 +770,7 @@ export default function Home() {
               <button
                 type="button"
                 className="btn btn-primary"
+                data-bs-dismiss="modal"
                 onClick={handleCreateTorrent}
               >
                 Create Torrent

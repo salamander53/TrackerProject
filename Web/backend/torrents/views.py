@@ -9,6 +9,10 @@ from .duy_download import *
 from .upload import *
 from rest_framework.decorators import api_view, parser_classes 
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views import View
+import threading
 # from .functional import info_command
 
 @api_view(['GET', 'POST'])
@@ -29,100 +33,47 @@ def torrents_list(request, format=None):
         torrent_path = torrent_instance.file.path
 
         start_leecher(torrent_path, "C:/Users/HP/Downloads/temp")
-
-        # # Phân tích thông tin torrent
-        # file_content = read_file(torrent_path)
-        # torrent_data, _ = decode_bencode(file_content)
-        
-        # # Chuyển đổi các key từ bytes sang str
-        # # torrent_data = convert_bytes_to_str(torrent_data)
-        
-        # tracker_url = torrent_data.get('announce', '')
-        # peer_id = generate_peer_id()
-        # peer_list = announce_to_tracker(torrent_data, 9999, peer_id, 'leecher')
-        # print("Phần tử đầu tiên:", peer_list)
-
-        # # Gửi tín hiệu tới Seeder trực tiếp
-        # seeder_ip = '192.168.1.9'
-        # seeder_port = 8180
-        # info_hash = calculate_info_hash(torrent_data['info']).hex()
-
-        # try:
-        #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        #         sock.settimeout(5)
-        #         sock.connect((seeder_ip, seeder_port))
-        #         # message = f"START_TRANSFER:{info_hash}".encode()
-        #         # sock.sendall(message)
-        #         print(f"Sent START_TRANSFER signal to seeder {seeder_ip}:{seeder_port}")
-
-        #     return Response({
-        #         'message': 'Seeder notified and torrent created successfully',
-        #     }, status=201)
-
-        # except socket.error as e:
-        #     return JsonResponse({'error': f'Error notifying Seeder: {str(e)}'}, status=500)
     
     return Response({
         'message': 'Downloaded successfully',
      }, status=201)
 
 
-    
-
-@api_view(['POST'])
-@parser_classes([MultiPartParser, FormParser])
-async def generate_torrent(request):
-    """
-    Nhận file từ request, tạo file torrent và khởi động seeder.
-    """
-    # uploaded_file = request.FILES.get('path_input')
-    
-    # if not uploaded_file:
-    #     return JsonResponse({'error': 'No file uploaded'}, status=400)
-    
-    # torrent_data = {
-    #     "announce": announce_list[0],  # Chọn tracker đầu tiên
-    #     "info": {
-    #         "name": uploaded_file.name,
-    #         "length": uploaded_file.size,
-    #         "piece length": 16384,  # Kích thước mỗi phần (byte)
-    #         "pieces": bytes(bencode_pieces(uploaded_file, 16384))  # Tính toán các mã băm của từng phần
-    #     }
-    # }
-
-    # # Lưu file tải lên vào thư mục tạm
-    # temp_file_path = os.path.join("/tmp", uploaded_file.name)
-    # with open(temp_file_path, "wb") as torrent_file:
-    #     torrent_file.write(bencodepy.encode(torrent_data))
-
-    # # Tạo file torrent
-    # # announce_list = ["http://48.210.50.194:8080/announce"]
-    # announce_list = ["http://127.0.0.1:8080/announce"]
-
-    # torrent_file_path = generate_torrent(temp_file_path, announce_list, uploaded_file.name)
-
-    # Khởi động seeder
-    path_input = request.POST.get('path_input') 
-    path_output = request.POST.get('path_output')
-    #print(path_input)
-    # announce_list = ["http://127.0.0.1:8080/announce"]
-    # # #torrent_name = "MyTorrent"
-    # file_path = "C:/Users/HP/Downloads/Report.pdf"
-    # torrent_name = os.path.basename(file_path)
-    # torrent_file_path = generate_file_torrent(file_path, announce_list, torrent_name)
-    # print(f"Generated torrent file at: {torrent_file_path}")
 
 
-    # asyncio.run(start_seeder(path_output, path_input))
-    await start_seeder(path_output, path_input)
-    return Response({
-        'message': 'Torrent created and seeder started successfully',
-        # 'torrentFilePath': torrent_file_path,
-    }, status=201)
+tasks = {}
+def run_async_coroutine(coroutine, *args, **kwargs): asyncio.run(coroutine(*args, **kwargs))
 
-   
+@method_decorator(csrf_exempt, name='dispatch')
+class GenerateTorrentView(View):
+    def post(self, request, *args, **kwargs):
+        command = request.POST.get('command')
+        path_input = request.POST.get('path_input')
+        path_output = request.POST.get('path_output')
 
-    
+        if command == 'run':
+            print("Received 'run' command")  # Thêm lệnh in để kiểm tra
+            port = random.randint(1024, 65535) # Chọn một cổng ngẫu nhiên từ 1024 đến 65535
+            task_id = id(threading.current_thread())
+            task = threading.Thread(target=run_async_coroutine, args=(start_seeder, path_output, path_input, port))
+            task.start()
+            tasks[task_id] = task
+            return JsonResponse({'message': 'Task started', 'task_id': task_id})
+
+        elif command == 'stop':
+            print("Received 'stop' command")  # Thêm lệnh in để kiểm tra
+            task_id = int(request.POST.get('task_id'))
+            task = tasks.get(task_id)
+            if task:
+                print("Stopping thread is unsafe and not recommended")
+                del tasks[task_id]
+                return JsonResponse({'message': 'Task stopped', 'task_id': task_id})
+            else:
+                return JsonResponse({'error': 'Task not found'}, status=404)
+
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
 @api_view(['GET', 'PUT', 'DELETE'])
 def torrents_detail(request, pk, format=None):
     """
