@@ -418,7 +418,10 @@ export default function Home() {
   // const [downloadProgress, setDownloadProgress] = useState({});
   // const { user } = useContext(AuthContext);
   const fileInputRef = useRef(null);
-
+  const [value, setValue] = useState({
+    'path_input': '',
+    'path_output': ''
+  })
   
 
   const handleFileChange = (event) => {
@@ -463,26 +466,25 @@ export default function Home() {
   };
 
   const handleCreateTorrent = async () => {
-    if (!torrentFile) {
-      setError("No file selected.");
-      return;
-    }
     setError(null);
     setUploading(true);
     const formData = new FormData();
-    formData.append("file", torrentFile);
-    console.log(fileInputRef)
+    formData.append("path_input", value.path_input);
+    formData.append("path_output", value.path_output);
+    console.log(formData)
     try {
-      const response = await AxiosInstance.post("/generate_torrent/", formData);
-      console.log("Upload Successful:", response.data);
+      await AxiosInstance.post("/generate_torrent/", formData);
+      // console.log("Upload Successful:", response.data);
       // toast.success("Torrent created successfully!");
-    } catch (error) {
+    } 
+    catch (error) {
       console.error("Upload Failed:", error);
       setError(
         "Upload Failed: " + (error.response?.data?.message || error.message)
       );
       // toast.error("Failed to create torrent. Check your input and try again.");
-    } finally {
+    } 
+    finally {
       setUploading(false);
     }
   };
@@ -668,13 +670,15 @@ export default function Home() {
             </div>
             <div className="modal-body">
               {error && <div className="alert alert-danger">{error}</div>}
+              <label className="form-label">Upload file from:</label>
               <div className="mb-3">
                 <input
-                  type="file"
-                  onChange={handleFileChange}
+                  type="text"
+                  value={value.path_input}
+                  onChange={(e) => setValue({...value, path_input: e.target.value}) }
                   className="form-control mb-3"
-                  accept=".zip,.rar,.txt,.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.mp3,.mp4,.avi,.mkv"
-                  ref={fileInputRef}
+                  // accept=".zip,.rar,.txt,.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.mp3,.mp4,.avi,.mkv"
+                  // ref={fileInputRef}
                 />
               </div>
               <div className="mb-3">
@@ -682,13 +686,10 @@ export default function Home() {
                 <div className="input-group">
                   <input
                     type="text"
+                    value={value.path_output}
+                    onChange={(e) => setValue({...value, path_output: e.target.value}) }
                     className="form-control"
-                    value="C:\\Users\\...\\Downloads"
-                    readOnly
                   />
-                  <button className="btn btn-outline-secondary" type="button">
-                    Change
-                  </button>
                 </div>
               </div>
               {uploading && (

@@ -88,7 +88,7 @@
 
 
 
-# def generate_torrent(file_path, announce_list, torrent_name):
+# def generate_file_torrent(file_path, announce_list, torrent_name):
 #     #files = [os.path.abspath(file_path)]
 #     torrent_data = {
 #         "announce": announce_list[0],  # Chọn tracker đầu tiên
@@ -135,7 +135,7 @@
 #     announce_list = ["http://127.0.0.1:8080/announce"]
 #     torrent_name = "MyTorrent"
 
-#     torrent_file_path = generate_torrent(file_path, announce_list, torrent_name)
+#     torrent_file_path = generate_file_torrent(file_path, announce_list, torrent_name)
 #     print(f"Generated torrent file at: {torrent_file_path}")
 # def generate_peer_id():
 #     return os.urandom(20)
@@ -391,7 +391,7 @@ def announce_to_tracker(torrent_data, port, peer_id, type):
 
 
 
-def generate_torrent(file_path, announce_list, torrent_name):
+def generate_file_torrent(file_path, announce_list, torrent_name, path):
     #files = [os.path.abspath(file_path)]
     torrent_name_without_extension = os.path.splitext(torrent_name)[0]
     torrent_data = {
@@ -403,9 +403,9 @@ def generate_torrent(file_path, announce_list, torrent_name):
             "pieces": bytes(bencode_pieces(file_path, 16384))  # Tính toán các mã băm của từng phần
         }
     }
-
+    #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     # Tạo file torrent
-    output_path = os.path.join("C:\\Users\\HP\\Downloads", f"{torrent_name_without_extension}.torrent")
+    output_path = os.path.join(path, f"{torrent_name_without_extension}.torrent")
     with open(output_path, "wb") as torrent_file:
         torrent_file.write(bencodepy.encode(torrent_data))
 
@@ -439,8 +439,8 @@ if __name__ == "__main__":
     announce_list = ["http://127.0.0.1:8080/announce"]
     #torrent_name = "MyTorrent"
     torrent_name = os.path.basename(file_path)
-    
-    torrent_file_path = generate_torrent(file_path, announce_list, torrent_name)
+    output_path = "C:\\Users\\HP\\Downloads"
+    torrent_file_path = generate_file_torrent(file_path, announce_list, torrent_name)
     print(f"Generated torrent file at: {torrent_file_path}")
 def generate_peer_id():
     return os.urandom(20)
@@ -658,8 +658,22 @@ async def handle_client(reader, writer, info_hash, peer_id, total_pieces, piece_
     await writer.wait_closed()
 
 
-async def start_seeder(torrent_file, port=5050):
-    file_content = read_file(torrent_file)
+async def start_seeder(output_path, file_path, port=5050):
+
+
+    # file_path = "C:/Users/HP/Downloads/Report.pdf"
+    # announce_list = ["http://48.210.50.194:8080/announce"]
+    announce_list = ["http://127.0.0.1:8080/announce"]
+    #torrent_name = "MyTorrent"
+    torrent_name = os.path.basename(file_path)
+    # output_path = "C:\\Users\\HP\\Downloads"
+    torrent_file_path = generate_file_torrent(file_path, announce_list, torrent_name, output_path)
+    print(f"Generated torrent file at: {torrent_file_path}")
+
+
+
+
+    file_content = read_file(torrent_file_path)
     torrent_data, _ = decode_bencode(file_content)
     info_hash = calculate_info_hash(torrent_data['info'])
     piece_length = torrent_data['info']['piece length']
@@ -668,7 +682,7 @@ async def start_seeder(torrent_file, port=5050):
     peer_id = generate_peer_id()
 
     # Load the file into memory
-    file_path = "C:/Users/HP/Downloads/Report.pdf"
+    #file_path = "C:/Users/HP/Downloads/Report.pdf"
     file_buffer = read_file(file_path)
 
     # Announce to tracker

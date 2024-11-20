@@ -7,6 +7,8 @@ from django.http import JsonResponse
 from .models import TorrentFile
 from .duy_download import *
 from .upload import *
+from rest_framework.decorators import api_view, parser_classes 
+from rest_framework.parsers import MultiPartParser, FormParser
 # from .functional import info_command
 
 @api_view(['GET', 'POST'])
@@ -68,39 +70,51 @@ def torrents_list(request, format=None):
     
 
 @api_view(['POST'])
-def generate_torrent(request):
+@parser_classes([MultiPartParser, FormParser])
+async def generate_torrent(request):
     """
     Nhận file từ request, tạo file torrent và khởi động seeder.
     """
-    uploaded_file = request.FILES.get('file')
+    # uploaded_file = request.FILES.get('path_input')
     
-    if not uploaded_file:
-        return JsonResponse({'error': 'No file uploaded'}, status=400)
+    # if not uploaded_file:
+    #     return JsonResponse({'error': 'No file uploaded'}, status=400)
     
-    torrent_data = {
-        "announce": announce_list[0],  # Chọn tracker đầu tiên
-        "info": {
-            "name": uploaded_file.name,
-            "length": uploaded_file.size,
-            "piece length": 16384,  # Kích thước mỗi phần (byte)
-            "pieces": bytes(bencode_pieces(uploaded_file, 16384))  # Tính toán các mã băm của từng phần
-        }
-    }
+    # torrent_data = {
+    #     "announce": announce_list[0],  # Chọn tracker đầu tiên
+    #     "info": {
+    #         "name": uploaded_file.name,
+    #         "length": uploaded_file.size,
+    #         "piece length": 16384,  # Kích thước mỗi phần (byte)
+    #         "pieces": bytes(bencode_pieces(uploaded_file, 16384))  # Tính toán các mã băm của từng phần
+    #     }
+    # }
 
-    # Lưu file tải lên vào thư mục tạm
-    temp_file_path = os.path.join("/tmp", uploaded_file.name)
-    with open(temp_file_path, "wb") as torrent_file:
-        torrent_file.write(bencodepy.encode(torrent_data))
+    # # Lưu file tải lên vào thư mục tạm
+    # temp_file_path = os.path.join("/tmp", uploaded_file.name)
+    # with open(temp_file_path, "wb") as torrent_file:
+    #     torrent_file.write(bencodepy.encode(torrent_data))
 
-    # Tạo file torrent
-    # announce_list = ["http://48.210.50.194:8080/announce"]
-    announce_list = ["http://127.0.0.1:8080/announce"]
+    # # Tạo file torrent
+    # # announce_list = ["http://48.210.50.194:8080/announce"]
+    # announce_list = ["http://127.0.0.1:8080/announce"]
 
-    torrent_file_path = generate_torrent(temp_file_path, announce_list, uploaded_file.name)
+    # torrent_file_path = generate_torrent(temp_file_path, announce_list, uploaded_file.name)
 
     # Khởi động seeder
-    start_seeder(torrent_file_path)
+    path_input = request.POST.get('path_input') 
+    path_output = request.POST.get('path_output')
+    #print(path_input)
+    # announce_list = ["http://127.0.0.1:8080/announce"]
+    # # #torrent_name = "MyTorrent"
+    # file_path = "C:/Users/HP/Downloads/Report.pdf"
+    # torrent_name = os.path.basename(file_path)
+    # torrent_file_path = generate_file_torrent(file_path, announce_list, torrent_name)
+    # print(f"Generated torrent file at: {torrent_file_path}")
 
+
+    # asyncio.run(start_seeder(path_output, path_input))
+    await start_seeder(path_output, path_input)
     return Response({
         'message': 'Torrent created and seeder started successfully',
         # 'torrentFilePath': torrent_file_path,
