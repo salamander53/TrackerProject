@@ -411,6 +411,7 @@ import bencode from "bencode";
 // }
 import { useRef } from "react";
 // import { table } from "console";
+
 export default function Home() {
   const [torrentFile, setTorrentFile] = useState(null);
   const [error, setError] = useState(null);
@@ -418,11 +419,34 @@ export default function Home() {
   // const [downloading, setDownloading] = useState({}); // Object to hold downloading status for each file
   // const [downloadProgress, setDownloadProgress] = useState({});
   // const { user } = useContext(AuthContext);
-  const fileInputRef = useRef(null);
+  // const fileInputRef = useRef(null);
   const [value, setValue] = useState({
     'path_input': '',
     'path_output': ''
   })
+  const [taskIds, setTaskIds] = useState([]); // Sử dụng mảng để lưu trữ taskId 
+  const [taskStatuses, setTaskStatuses] = useState({}); // Sử dụng đối tượng để lưu trữ trạng thái của các task
+
+  const checkThreadStatus = async (task_id) => { 
+    try { 
+      const response = await AxiosInstance.get(`/get-thread-status/${task_id}/`); 
+      return response.data.status; 
+    } catch (error) { 
+      console.error('Failed to fetch thread status:', error); 
+      return 'error'; // Trả về "error" nếu có lỗi 
+      } 
+  };
+
+  const startCheckingStatus = (taskId) => { 
+    const intervalId = setInterval(async () => { 
+      const status = await checkThreadStatus(taskId); 
+      setTaskStatuses(prevStatuses => ({ ...prevStatuses, [taskId]: status })); 
+      if (status === 'completed') { 
+        clearInterval(intervalId); 
+      } 
+    }, 5000); // Kiểm tra mỗi 5 giây 
+  };
+
   const [seeds, setSeeds] = useState([])
   
   const handleFileChange = (event) => {
@@ -431,6 +455,7 @@ export default function Home() {
     } else {
       const selectedFile = event.target.files[0];
       setTorrentFile(selectedFile);
+      setValue({...value, path_input: selectedFile.name})
       setError(null);
     }
   };
@@ -438,7 +463,7 @@ export default function Home() {
   const handleCancel = () => {
     setTorrentFile(null);
     setError(null);
-    if (fileInputRef.current) { fileInputRef.current.value = ''; }
+    // if (fileInputRef.current) { fileInputRef.current.value = ''; }
   };
 
 
@@ -454,13 +479,17 @@ export default function Home() {
 
     const formData = new FormData();
     formData.append("file", torrentFile);
-
+    formData.append("command", "down");
+    formData.append("path_output", value.path_output);
     try {
       const response = await AxiosInstance.post("/upload-torrent/", formData);
-      console.log("Upload Successful:", response.data);
+      setTaskIds([...taskIds, response.data.task_id]);
+      startCheckingStatus(response.data.task_id);
+      //setSeeds([...seeds, {name: getFileName(value.path_input), status: "downloading...", task_id: response.data.task_id}])
+      // console.log("Download Successful:", response.data);
     } catch (error) {
-      console.error("Upload Failed:", error);
-      setError("Upload Failed: " + error.message);
+      console.error("Download Failed:", error);
+      setError("Download Failed: " + error.message);
     } finally {
       setUploading(false);
     }
@@ -480,7 +509,7 @@ export default function Home() {
   
     try {
       const response = await AxiosInstance.post("/generate_torrent/", formData);
-      setSeeds([...seeds, {name: getFileName(value.path_input), status: "run", task_id: response.data.task_id}])
+      setSeeds([...seeds, {name: getFileName(value.path_input), status: "seeding...", task_id: response.data.task_id}])
       console.log("Upload Successful:", response.data);
       // toast.success("Torrent created successfully!");
     } 
@@ -521,6 +550,7 @@ export default function Home() {
       setUploading(false);
     }
   }
+
   //   try {
   //     const response = await fetch(
   //       "http://127.0.0.1:8000/upload-torrent/",
@@ -605,16 +635,36 @@ export default function Home() {
           {seeds.map((d,i) => (
             <tr key={i}>
                 <td style={{ width: 180, textTransform: 'uppercase', fontWeight: 500 }}>{d.name}</td>
-                <td style={{ width: 170 }}>{d.status = "run"? "Seeding":"Downloading"}</td>
+                <td style={{ width: 170 }}>{d.status}</td>
                 <td>
                     <button onClick={()=>handleStop(d.task_id)}  className="btn btn-sm btn-danger">stop</button>
                 </td>
+                
             </tr>
 
           ))}
           </tbody>
           </table>
           ):""}
+          </div>
+          <div>
+
+          {taskIds.map(taskId => ( 
+            <div key={taskId}> 
+              <p>Checking status for task: {taskId}</p> 
+                <table> 
+                  <tbody> 
+                    <tr> 
+                      <td style={{ width: 170 }}>
+                        {taskStatuses[taskId] === "completed" ? "Downloaded" : taskStatuses[taskId]}
+                      </td> 
+                    </tr> 
+                  </tbody> 
+                </table> 
+               
+            </div> 
+          ))}
+
           </div>
           {uploading && (
             <>
@@ -654,14 +704,7 @@ export default function Home() {
                   onChange={handleFileChange}
                   className="form-control mb-3"
                   accept=".torrent"
-                  ref={fileInputRef}
                 />
-                <p>
-                  Peers: 0 | Seeds: 0{" "}
-                  <span className="badge bg-warning text-dark">
-                    Low peers and seeds
-                  </span>
-                </p>
               </div>
 
               <div className="mb-3">
@@ -669,13 +712,10 @@ export default function Home() {
                 <div className="input-group">
                   <input
                     type="text"
+                    value={value.path_output}
+                    onChange={(e) => setValue({...value, path_output: e.target.value}) }
                     className="form-control"
-                    value="C:\Users\...\Downloads"
-                    readOnly
                   />
-                  <button className="btn btn-outline-secondary" type="button">
-                    Change
-                  </button>
                 </div>
               </div>
             </div>

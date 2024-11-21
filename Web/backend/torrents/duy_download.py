@@ -454,10 +454,10 @@ async def download_file(file_content, output_path):
 
 
 
-def start_leecher(torrent_file, output_path):
+async def start_leecher(torrent_file, output_path):
     file_content = read_file(torrent_file)
-    asyncio.run(download_file(file_content, output_path))
-
+    await download_file(file_content, output_path)
+    
     # torrent_data, _ = decode_bencode(file_content)
     # peer_id = generate_peer_id()
     # #peer_id = b'\x9c\xc3\xad\x9a\xe2\x15\x8f\xa5\xc4\xe9\x08\x7f\x5c\x84\xb6\x22\x92\x5b\x7a\x90'
